@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>波浪背景测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        #waves-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: transparent;
+        }
+        
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 50px;
+            text-align: center;
+        }
+        
+        .test-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div id="waves-background"></div>
+    
+    <div class="content">
+        <h1>波浪背景测试页面</h1>
+        <p>如果波浪背景正常工作，你应该能看到动态的波浪线条</p>
+    </div>
+    
+    <div class="test-info">
+        <div>测试状态：<span id="status">初始化中...</span></div>
+        <div>文件加载：<span id="file-status">检查中...</span></div>
+        <div>容器状态：<span id="container-status">检查中...</span></div>
+    </div>
+
+    <script src="waves-background.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusEl = document.getElementById('status');
+            const fileStatusEl = document.getElementById('file-status');
+            const containerStatusEl = document.getElementById('container-status');
+            
+            // 检查文件加载
+            if (typeof WavesBackground !== 'undefined') {
+                fileStatusEl.textContent = '✅ 已加载';
+                fileStatusEl.style.color = '#4ade80';
+            } else {
+                fileStatusEl.textContent = '❌ 未加载';
+                fileStatusEl.style.color = '#ef4444';
+                statusEl.textContent = '文件加载失败';
+                return;
+            }
+            
+            // 检查容器
+            const wavesContainer = document.getElementById('waves-background');
+            if (wavesContainer) {
+                containerStatusEl.textContent = '✅ 找到容器';
+                containerStatusEl.style.color = '#4ade80';
+            } else {
+                containerStatusEl.textContent = '❌ 容器不存在';
+                containerStatusEl.style.color = '#ef4444';
+                statusEl.textContent = '容器创建失败';
+                return;
+            }
+            
+            try {
+                // 创建波浪背景实例
+                const waves = new WavesBackground(wavesContainer, {
+                    lineColor: 'rgba(139, 92, 246, 0.8)',
+                    backgroundColor: 'transparent',
+                    waveSpeedX: 0.02,
+                    waveSpeedY: 0.01,
+                    waveAmpX: 40,
+                    waveAmpY: 20,
+                    xGap: 20,
+                    yGap: 50,
+                    friction: 0.9,
+                    tension: 0.01,
+                    maxCursorMove: 120
+                });
+                
+                statusEl.textContent = '✅ 初始化成功';
+                statusEl.style.color = '#4ade80';
+                
+                // 保存到全局
+                window.wavesBackground = waves;
+                
+            } catch (error) {
+                statusEl.textContent = '❌ 初始化失败: ' + error.message;
+                statusEl.style.color = '#ef4444';
+                console.error('波浪背景初始化错误:', error);
+            }
+        });
+    </script>
+</body>
+</html>

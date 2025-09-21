@@ -1,0 +1,10 @@
+{
+  "deepseek": {
+    "apiKey": "sk-4b4df47ae38e41b3b4ef443446d7a5c0",
+    "baseUrl": "https://api.deepseek.com"
+  },
+  "kimi": {
+    "apiKey": "sk-NJA5ODYHAaOK6nYPruwULTMD5bx1HGMIkxq9zbDYd9SObdUC",
+    "baseUrl": "https://api.moonshot.cn"
+  }
+}

@@ -1,0 +1,3478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>个人工作台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            min-height: 100vh;
+            color: #333;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+            background: transparent;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .sidebar {
+            width: 80px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 0;
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+            box-shadow: 4px 0 20px rgba(139, 92, 246, 0.15);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 80px;
+            padding: 0;
+            min-height: 100vh;
+            overflow: visible;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .sidebar-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .sidebar-tab {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(15px);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .sidebar-tab:hover::before {
+            left: 100%;
+        }
+        
+        .sidebar-tab svg {
+            width: 24px;
+            height: 24px;
+            fill: #8b5cf6;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-tab.active {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            transform: scale(1.1);
+        }
+        
+        .sidebar-tab.active svg {
+            fill: white;
+            transform: scale(1.1);
+        }
+        
+        .sidebar-tab:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.25);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar-tab:hover:not(.active) svg {
+            fill: #6d28d9;
+            transform: scale(1.05);
+        }
+        
+
+        
+        .tab-content {
+            display: none;
+            animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 30px;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: visible;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px) scale(0.98); 
+                filter: blur(5px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+                filter: blur(0);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #7c3aed, #9333ea);
+        }
+        
+        /* 选择文本样式 */
+        ::selection {
+            background: rgba(139, 92, 246, 0.3);
+            color: #4c1d95;
+        }
+        
+        /* 页面加载动画 */
+        .container {
+            animation: slideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 记事本头部样式 */
+        .notes-header {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            border: 2px solid rgba(139, 92, 246, 0.15);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.1);
+            overflow: visible;
+        }
+
+        .notes-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            overflow: visible;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b5cf6;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            color: #4c1d95;
+        }
+
+        .search-input::placeholder {
+            color: #a78bfa;
+            opacity: 0.8;
+        }
+
+        .search-input:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+
+
+        /* 记事本主体区域 */
+        .notes-section {
+            display: flex;
+            gap: 30px;
+            height: calc(100vh - 280px);
+            position: relative;
+            z-index: 1;
+        }
+
+        .notes-list-container {
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+            position: relative;
+            z-index: 1;
+        }
+
+        .notes-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(139, 92, 246, 0.15);
+            border-bottom: none;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .notes-list-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #4c1d95;
+        }
+
+        .notes-count {
+            font-size: 12px;
+            color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .notes-list {
+            flex: 1;
+            border: 2px solid rgba(139, 92, 246, 0.15);
+            border-top: none;
+            border-radius: 0 0 15px 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+            overflow-x: visible;
+            position: relative;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #a78bfa;
+        }
+
+        .empty-state p {
+            margin: 10px 0 5px 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .empty-state p:last-child {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .note-item {
+            padding: 20px;
+            border: 2px solid rgba(139, 92, 246, 0.15);
+            border-radius: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .note-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .note-item:hover::before {
+            left: 100%;
+        }
+        
+        .delete-note-btn {
+             position: absolute;
+             top: 10px;
+             right: 10px;
+             width: 28px;
+             height: 28px;
+             border: none;
+             background: rgba(156, 163, 175, 0.1);
+             color: #9ca3af;
+             border-radius: 50%;
+             cursor: pointer;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             opacity: 0;
+             transform: scale(0.8);
+             transition: all 0.3s ease;
+             z-index: 10;
+         }
+         
+         .note-item:hover .delete-note-btn {
+             opacity: 1;
+             transform: scale(1);
+         }
+         
+         .delete-note-btn:hover {
+             background: rgba(156, 163, 175, 0.2);
+             transform: scale(1.1);
+             box-shadow: 0 2px 8px rgba(156, 163, 175, 0.3);
+         }
+         
+         .delete-note-btn:active {
+             transform: scale(0.95);
+         }
+         
+         .project-title-container {
+             position: relative;
+             display: flex;
+             align-items: center;
+             margin-bottom: 15px;
+         }
+         
+         .project-title-input {
+             flex: 1;
+             padding-right: 40px;
+         }
+         
+         .delete-project-btn {
+             position: absolute;
+             top: 50%;
+             right: 10px;
+             transform: translateY(-50%);
+             width: 28px;
+             height: 28px;
+             border: none;
+             background: rgba(156, 163, 175, 0.1);
+             color: #9ca3af;
+             border-radius: 50%;
+             cursor: pointer;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             opacity: 0;
+             transform: translateY(-50%) scale(0.8);
+             transition: all 0.3s ease;
+             z-index: 10;
+             font-size: 14px;
+         }
+         
+         .todo-project-card:hover .delete-project-btn {
+             opacity: 1;
+             transform: translateY(-50%) scale(1);
+         }
+         
+         .delete-project-btn:hover {
+             background: rgba(239, 68, 68, 0.2);
+             color: #ef4444;
+             transform: translateY(-50%) scale(1.1);
+             box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+         }
+         
+         .delete-project-btn:active {
+             transform: translateY(-50%) scale(0.95);
+         }
+        
+        .note-item:hover {
+            border-color: #8b5cf6;
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);
+            transform: translateY(-3px) scale(1.02);
+            background: rgba(255, 255, 255, 0.6);
+        }
+        
+        .note-item.active {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .note-item h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4c1d95;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-item p {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: #6b7280;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-item .note-meta {
+            font-size: 11px;
+            color: #9ca3af;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* 编辑器样式 */
+        .note-editor {
+            flex: 1;
+            border: 2px solid rgba(139, 92, 246, 0.15);
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px 20px 0 20px;
+        }
+        
+        .note-content-container {
+            flex: 1;
+            margin: 20px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .editor-actions {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            z-index: 10;
+            background: transparent;
+            padding: 0;
+        }
+        
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: rgba(139, 92, 246, 0.7);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-icon:hover {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            transform: scale(1.1);
+        }
+        
+        .btn-icon:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(139, 92, 246, 0.2);
+        }
+        
+        .color-picker {
+            position: absolute;
+            top: 100%;
+            left: 50px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.15);
+            z-index: 1000;
+            margin-top: 8px;
+        }
+        
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .color-option {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+
+         
+
+
+         .add-note-btn {
+             position: absolute;
+             bottom: 20px;
+             right: 20px;
+             width: 56px;
+             height: 56px;
+             border-radius: 50%;
+             border: none;
+             background: linear-gradient(135deg, #8b5cf6, #a855f7);
+             color: white;
+             font-size: 24px;
+             cursor: pointer;
+             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+             transition: all 0.3s ease;
+             z-index: 10;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+         }
+
+         .add-note-btn:hover {
+             transform: translateY(-2px);
+             box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+             background: linear-gradient(135deg, #7c3aed, #9333ea);
+         }
+
+         .add-note-btn:active {
+             transform: translateY(0);
+             box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+         }
+
+         .add-project-btn {
+             position: absolute;
+             bottom: 20px;
+             right: 20px;
+             width: 56px;
+             height: 56px;
+             border-radius: 50%;
+             border: none;
+             background: linear-gradient(135deg, #8b5cf6, #a855f7);
+             color: white;
+             font-size: 24px;
+             cursor: pointer;
+             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+             transition: all 0.3s ease;
+             z-index: 10;
+             display: none;
+             align-items: center;
+             justify-content: center;
+         }
+         
+         #todo .add-project-btn {
+             display: flex;
+         }
+
+         .add-project-btn:hover {
+             transform: translateY(-2px);
+             box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+             background: linear-gradient(135deg, #7c3aed, #9333ea);
+         }
+
+         .add-project-btn:active {
+             transform: translateY(0);
+             box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+         }
+
+         .notes-list-container {
+             position: relative;
+         }
+        
+        .note-title {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            color: #4c1d95;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+        
+        .note-title::placeholder {
+            color: #a78bfa;
+            opacity: 0.8;
+        }
+        
+        .note-title:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), 0 8px 25px rgba(139, 92, 246, 0.1);
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .note-title:hover {
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.7);
+            transform: translateY(-1px);
+        }
+        
+        .title-input-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+        
+        .polish-title-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            white-space: nowrap;
+        }
+        
+        .polish-title-btn:hover {
+            background: linear-gradient(135deg, #7c3aed, #9333ea);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+        
+        .polish-title-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3);
+        }
+        
+        .polish-title-btn svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.9;
+        }
+        
+        .note-content {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            padding-top: 55px;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            line-height: 1.6;
+            background: transparent;
+            color: #4c1d95;
+            font-weight: 500;
+            box-sizing: border-box;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+        
+        .note-content:empty:before {
+            content: attr(data-placeholder);
+            color: #a78bfa;
+            opacity: 0.8;
+            pointer-events: none;
+            font-size: 14px;
+        }
+        
+        .note-content::placeholder {
+            color: #a78bfa;
+            opacity: 0.8;
+        }
+        
+        .note-content:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), 0 8px 25px rgba(139, 92, 246, 0.1);
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .note-content:hover {
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.7);
+            transform: translateY(-1px);
+        }
+
+        .editor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-top: 2px solid rgba(139, 92, 246, 0.1);
+            background: rgba(139, 92, 246, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .editor-info {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .editor-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(168, 85, 247, 0.9) 100%);
+            color: white;
+            border: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.95) 0%, rgba(147, 51, 234, 0.95) 100%);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(107, 114, 128, 0.8);
+            color: white;
+            border: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+             background: rgba(75, 85, 99, 0.9);
+             box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+         }
+         
+         /* 搜索高亮样式 */
+         mark {
+             background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+             color: #92400e;
+             padding: 2px 4px;
+             border-radius: 3px;
+             font-weight: 600;
+         }
+         
+         /* 响应式设计 */
+         @media (max-width: 768px) {
+             .notes-section {
+                 flex-direction: column;
+                 height: auto;
+                 gap: 15px;
+             }
+             
+             .notes-list-container {
+                 width: 100%;
+                 max-height: 300px;
+             }
+             
+             .note-editor {
+                 min-height: 400px;
+             }
+         }
+         
+         @media (max-width: 768px) {
+             .notes-header {
+                 padding: 15px;
+             }
+             
+             .notes-controls {
+                 flex-direction: column;
+                 align-items: stretch;
+                 gap: 10px;
+             }
+             
+             .search-container {
+                 max-width: none;
+                 min-width: auto;
+             }
+             
+             .notes-section {
+                 gap: 10px;
+                 height: auto;
+             }
+             
+             .notes-list-container {
+                 max-height: 250px;
+             }
+             
+             .editor-header {
+                 flex-direction: column;
+                 gap: 10px;
+                 align-items: stretch;
+             }
+             
+
+             
+             .note-content {
+                 margin: 10px;
+                 padding: 15px;
+                 min-height: 200px;
+             }
+             
+             .editor-footer {
+                 flex-direction: column;
+                 gap: 10px;
+                 align-items: stretch;
+             }
+             
+             .editor-info {
+                 justify-content: center;
+             }
+             
+             .editor-buttons {
+                 justify-content: center;
+             }
+         }
+         
+         @media (max-width: 480px) {
+             .notes-header {
+                 padding: 10px;
+             }
+             
+             .notes-controls {
+                 gap: 8px;
+             }
+             
+             .btn {
+                 padding: 8px 12px;
+                 font-size: 13px;
+             }
+             
+             .search-input {
+                 padding: 10px 12px 10px 35px;
+                 font-size: 13px;
+             }
+             
+             .search-icon {
+                 left: 12px;
+                 width: 14px;
+                 height: 14px;
+             }
+             
+             .sort-select {
+                 padding: 10px 12px;
+                 font-size: 13px;
+             }
+             
+             .notes-list-header {
+                 padding: 12px 15px;
+             }
+             
+             .notes-list-header h3 {
+                 font-size: 14px;
+             }
+             
+             .notes-list {
+                 padding: 10px;
+             }
+             
+             .note-item {
+                 padding: 12px;
+                 margin-bottom: 8px;
+             }
+             
+             .note-item h4 {
+                 font-size: 13px;
+             }
+             
+             .note-item p {
+                 font-size: 11px;
+             }
+             
+             .note-title {
+                 padding: 10px 15px;
+                 font-size: 16px;
+             }
+             
+             .note-content {
+                 font-size: 13px;
+                 line-height: 1.5;
+             }
+             
+
+         }
+        
+        /* 待办事项样式 */
+        #todo {
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+        
+        .todo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 20px;
+            min-height: 100%;
+        }
+        
+        .todo-project-card {
+             width: 100%;
+             min-height: 400px;
+             max-height: 500px;
+             border: 2px solid rgba(139, 92, 246, 0.15);
+             border-radius: 15px;
+             background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .todo-project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.08), transparent);
+            transition: left 0.6s ease;
+            z-index: 1;
+        }
+        
+        .todo-project-card:hover::before {
+            left: 100%;
+        }
+        
+        .todo-project-card:hover {
+            border-color: #8b5cf6;
+            background: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .project-title-input {
+            border: none;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 20px;
+            font-weight: 600;
+            font-size: 18px;
+            color: #4c1d95;
+            backdrop-filter: blur(10px);
+            outline: none;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            border-radius: 0;
+        }
+        
+        .project-title-input::placeholder {
+            color: #a78bfa;
+            opacity: 0.8;
+        }
+        
+        .project-title-input:focus {
+            background: rgba(139, 92, 246, 0.15);
+            box-shadow: inset 0 0 0 2px rgba(139, 92, 246, 0.3);
+        }
+        
+        .project-tasks-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .task-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+        
+        .task-item:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateX(8px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);
+        }
+        
+        .task-item input[type="checkbox"] {
+            margin-right: 15px;
+            transform: scale(1.3);
+            accent-color: #8b5cf6;
+            cursor: pointer;
+        }
+        
+        .task-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+            background: rgba(139, 92, 246, 0.05);
+            color: #9ca3af;
+        }
+        
+        .todo-task {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .todo-task:last-child {
+            border-bottom: none;
+        }
+        
+        .todo-task.completed {
+            opacity: 0.6;
+        }
+        
+        .todo-task.completed .task-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+        
+        .task-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ddd;
+            border-radius: 3px;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        
+        .task-checkbox:hover {
+            border-color: #8b5cf6;
+        }
+        
+        .task-checkbox.checked {
+            background-color: #8b5cf6;
+            border-color: #8b5cf6;
+            position: relative;
+        }
+        
+        .task-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: -2px;
+            left: 1px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .task-text {
+            flex: 1;
+            padding: 4px;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #4c1d95;
+        }
+        
+        .task-text:focus {
+            background-color: rgba(139, 92, 246, 0.05);
+            border-radius: 3px;
+        }
+        
+        .add-task-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: auto;
+        }
+        
+        .add-task-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            color: #4c1d95;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        .add-task-input::placeholder {
+            color: #a78bfa;
+            opacity: 0.8;
+        }
+        
+        .add-task-input:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        .add-task-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        .add-task-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+        
+        .add-task-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* AI搜索样式 */
+        .ai-section {
+            display: flex;
+            gap: 30px;
+            height: calc(100vh - 150px);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .ai-conversations-container {
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .ai-conversations-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(139, 92, 246, 0.15);
+            border-bottom: none;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .ai-conversations-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #4c1d95;
+        }
+        
+        .conversations-count {
+            font-size: 12px;
+            color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .ai-conversations-list {
+            flex: 1;
+            border: 2px solid rgba(139, 92, 246, 0.15);
+            border-top: none;
+            border-radius: 0 0 15px 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+            overflow-x: visible;
+            position: relative;
+        }
+        
+        .conversation-item {
+            padding: 15px;
+            border: 2px solid rgba(139, 92, 246, 0.15);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .conversation-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .conversation-item:hover::before {
+            left: 100%;
+        }
+        
+        .conversation-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.15);
+            border-color: #a855f7;
+        }
+        
+        .conversation-item.active {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+        }
+        
+        .conversation-item h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4c1d95;
+            line-height: 1.3;
+        }
+        
+        .conversation-item p {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: #6b46c1;
+            line-height: 1.4;
+            opacity: 0.8;
+        }
+        
+        .conversation-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #8b5cf6;
+            opacity: 0.7;
+        }
+        
+        .delete-conversation-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: rgba(156, 163, 175, 0.1);
+            color: #9ca3af;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .conversation-item:hover .delete-conversation-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .delete-conversation-btn:hover {
+            background: rgba(156, 163, 175, 0.2);
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(156, 163, 175, 0.3);
+        }
+        
+        .delete-conversation-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 番茄钟样式 */
+        .pomodoro-section {
+            display: flex;
+            height: calc(100vh - 150px);
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            margin: 20px;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .pomodoro-main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .pomodoro-timer-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 60px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .pomodoro-display {
+            margin-bottom: 40px;
+        }
+
+        .pomodoro-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+        }
+
+        .pomodoro-time {
+            font-size: 72px;
+            font-weight: 300;
+            color: white;
+            margin-bottom: 10px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .pomodoro-status {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+        }
+
+        .pomodoro-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .time-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .time-selector select {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 12px 24px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .time-selector select:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .time-selector select:active {
+            transform: translateY(0);
+        }
+
+        .time-selector select {
+            position: relative;
+            z-index: 1;
+        }
+
+        .time-selector select option {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            margin: 2px 0;
+            font-size: 16px;
+            font-weight: 500;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .time-selector select option:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .time-selector select option:checked,
+        .time-selector select option:selected {
+            background: rgba(255, 255, 255, 0.4);
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .pomodoro-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pomodoro-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 12px 24px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .pomodoro-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .pomodoro-btn:active {
+            transform: translateY(0);
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border: none;
+        }
+
+        .pause-btn {
+            background: linear-gradient(135deg, #feca57, #ff9ff3);
+            border: none;
+        }
+
+        .resume-btn {
+            background: linear-gradient(135deg, #48dbfb, #0abde3);
+            border: none;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #ff9ff3, #f368e0);
+            border: none;
+        }
+
+        .pomodoro-sidebar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .pomodoro-stats, .pomodoro-records {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stats-header, .records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .stats-header h3, .records-header h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .stats-tabs {
+            display: flex;
+            gap: 5px;
+        }
+
+        .stats-tab {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stats-tab.active, .stats-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .stats-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+        .stat-value {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .records-count {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+        }
+
+        .records-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .record-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .record-date {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .record-duration {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .empty-state p {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .pomodoro-section {
+                flex-direction: column;
+                height: auto;
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .pomodoro-timer-container {
+                padding: 40px 20px;
+            }
+
+            .pomodoro-time {
+                font-size: 48px;
+            }
+
+            .pomodoro-icon {
+                font-size: 60px;
+            }
+
+            .pomodoro-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .pomodoro-btn {
+                width: 100%;
+            }
+        }
+        
+
+        
+        /* 弹窗面板样式 */
+        .pomodoro-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .pomodoro-modal .modal-content {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px);
+            border-radius: 20px;
+            padding: 0;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .pomodoro-modal .modal-header {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pomodoro-modal .modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        
+        .pomodoro-modal .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+        
+        .pomodoro-modal .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .pomodoro-modal .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        /* 右侧功能按钮样式 */
+        .pomodoro-side-buttons {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .pomodoro-side-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .pomodoro-side-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+        
+        .pomodoro-side-btn:active {
+            transform: scale(0.95);
+        }
+
+        .color-change-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .color-change-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-change-btn:active {
+            transform: translateY(0) scale(0.95);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 侧边栏样式 */
+        .pomodoro-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+        
+        .pomodoro-sidebar.show {
+            transform: translateX(0) !important;
+        }
+        
+        .sidebar-header {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .sidebar-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+        
+        .sidebar-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar-body {
+            padding: 20px;
+        }
+        
+        /* 统计标签页样式 */
+        .stats-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            padding: 4px;
+        }
+        
+        .stats-tab {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #8b5cf6;
+        }
+        
+        .stats-tab.active {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+        
+        .stats-tab:hover:not(.active) {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        /* 统计内容样式 */
+        .stats-summary {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .stat-item {
+            background: rgba(139, 92, 246, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+        
+        .stat-label {
+            font-weight: 500;
+            color: #6b7280;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #8b5cf6;
+        }
+        
+        /* 记录列表样式 */
+        .records-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        
+        .records-count {
+            font-weight: 600;
+            color: #8b5cf6;
+        }
+        
+        .records-list {
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        .record-item {
+            background: rgba(139, 92, 246, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(139, 92, 246, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .record-icon {
+            font-size: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+        
+        .record-info {
+            flex: 1;
+        }
+        
+        .record-duration {
+            font-weight: 600;
+            color: #8b5cf6;
+            margin-bottom: 4px;
+        }
+        
+        .record-time {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        
+        .add-conversation-btn {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            transition: all 0.3s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .add-conversation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            background: linear-gradient(135deg, #7c3aed, #9333ea);
+        }
+        
+        .add-conversation-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+        
+        .ai-conversations-container {
+            position: relative;
+        }
+        
+        .ai-chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .ai-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            align-items: center;
+        }
+        
+        .ai-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 15px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            color: #4c1d95;
+            font-weight: 500;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .ai-input::placeholder {
+            color: #a78bfa;
+            opacity: 0.8;
+        }
+        
+        .ai-input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), 0 8px 25px rgba(139, 92, 246, 0.1);
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .ai-input:hover {
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.7);
+            transform: translateY(-1px);
+        }
+        
+        .ai-model-select {
+            padding: 15px 20px;
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            color: #4c1d95;
+            font-weight: 500;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .ai-model-select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), 0 8px 25px rgba(139, 92, 246, 0.1);
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .ai-model-select:hover {
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.7);
+            transform: translateY(-1px);
+        }
+        
+        .ai-send-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+        
+        .ai-send-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .ai-send-btn:hover::before {
+            left: 100%;
+        }
+        
+        .ai-send-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4);
+        }
+        
+        .ai-chat {
+            flex: 1;
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.1);
+            max-height: calc(100vh - 120px);
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .message:hover::before {
+            left: 100%;
+        }
+        
+        .message:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.1);
+        }
+        
+        .message.user {
+            background: rgba(139, 92, 246, 0.15);
+            margin-left: 20%;
+            color: #4c1d95;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        
+        .message.ai {
+            background: rgba(168, 85, 247, 0.1);
+            margin-right: 20%;
+            color: #4c1d95;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 5px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+            box-shadow: 0 4px 20px rgba(107, 114, 128, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 8px 30px rgba(107, 114, 128, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+                padding: 20px 0;
+            }
+            
+            .main-content {
+                margin-left: 60px;
+            }
+            
+            .notes-section {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .ai-controls {
+                flex-direction: column;
+            }
+            
+            .todo-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, 1fr);
+                height: auto;
+                min-height: calc(100vh - 60px);
+            }
+            
+            .todo-project-card {
+                min-height: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 50px;
+                padding: 15px 0;
+            }
+            
+            .sidebar-tab {
+                width: 35px;
+                height: 35px;
+                margin: 8px 0;
+            }
+            
+            .sidebar-tab svg {
+                width: 18px;
+                height: 18px;
+            }
+            
+            .main-content {
+                margin-left: 50px;
+                padding: 0 5px;
+            }
+            
+            .container {
+                min-width: 320px;
+            }
+            
+            .title-input-container {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .polish-title-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+        }
+        
+        /* 自定义弹窗样式 */
+        .custom-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .custom-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            transform: scale(0.8) translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .custom-modal.show .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .modal-content:hover::before {
+            left: 100%;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4c1d95;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .modal-message {
+            font-size: 16px;
+            color: #6b46c1;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .modal-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modal-btn-cancel {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            border: 2px solid rgba(139, 92, 246, 0.3);
+        }
+        
+        .modal-btn-cancel:hover {
+            background: rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
+        }
+        
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border: 2px solid transparent;
+        }
+        
+        .modal-btn-confirm:hover {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+        
+        .modal-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* 项目管理样式 */
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .project-title h2 {
+            color: #8b5cf6;
+            margin: 0 0 5px 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .project-title p {
+            color: rgba(139, 92, 246, 0.7);
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .add-task-btn {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            border: none;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        .add-task-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+        
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            height: calc(100vh - 250px);
+        }
+        
+        .kanban-column {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .kanban-column:hover {
+            border-color: #8b5cf6;
+            background: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .column-header h3 {
+            color: #8b5cf6;
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .task-count {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .task-list {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 200px;
+        }
+        
+        .empty-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: rgba(139, 92, 246, 0.5);
+            text-align: center;
+        }
+        
+        .empty-column p {
+            margin: 10px 0 0 0;
+            font-size: 14px;
+        }
+        
+        .task-card {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            cursor: grab;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 2px 10px rgba(139, 92, 246, 0.08);
+        }
+        
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+        
+        .task-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+        
+        .task-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .task-checkbox-container {
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .task-checkbox {
+            display: none;
+        }
+        
+        .task-checkbox-label {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(139, 92, 246, 0.6);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .task-checkbox-label:hover {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .task-checkbox:checked + .task-checkbox-label {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            border-color: #8b5cf6;
+        }
+        
+        .task-checkbox:checked + .task-checkbox-label::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .task-name {
+            color: #8b5cf6;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 0;
+            flex: 1;
+            line-height: 1.4;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .task-card:hover .task-actions {
+            opacity: 1;
+        }
+        
+        .task-action-btn {
+            background: none;
+            border: none;
+            color: rgba(139, 92, 246, 0.7);
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .task-action-btn:hover {
+            color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .task-description {
+            color: rgba(139, 92, 246, 0.8);
+            font-size: 12px;
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+        
+        .task-assignee {
+            color: rgba(139, 92, 246, 0.7);
+            background: rgba(139, 92, 246, 0.1);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .task-due-date {
+            color: rgba(139, 92, 246, 0.6);
+        }
+        
+        .task-due-date.overdue {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        /* 任务模态框样式 */
+        .task-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, rgba(248, 246, 255, 0.95), rgba(240, 235, 255, 0.95));
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            backdrop-filter: blur(20px);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+        }
+        
+        .modal-header h3 {
+            color: #8b5cf6;
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: rgba(139, 92, 246, 0.7);
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #8b5cf6;
+            font-weight: 500;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #8b5cf6;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 20px;
+            border-top: 1px solid rgba(139, 92, 246, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(139, 92, 246, 0.2);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        /* 拖拽样式 */
+        .kanban-column.drag-over {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .kanban-board {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                height: auto;
+            }
+            
+            .project-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" data-tab="notes">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    </svg>
+                </button>
+                <button class="sidebar-tab" data-tab="todo">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10,17L5,12L6.41,10.58L10,14.17L17.59,6.58L19,8M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C3.89,3 3,3.89 3,5Z"/>
+                    </svg>
+                </button>
+                <button class="sidebar-tab" data-tab="ai">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7H14A7,7 0 0,1 21,14H22A1,1 0 0,1 23,15V18A1,1 0 0,1 22,19H21V20A2,2 0 0,1 19,22H5A2,2 0 0,1 3,20V19H2A1,1 0 0,1 1,18V15A1,1 0 0,1 2,14H3A7,7 0 0,1 10,7H11V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M7.5,13A2.5,2.5 0 0,0 5,15.5A2.5,2.5 0 0,0 7.5,18A2.5,2.5 0 0,0 10,15.5A2.5,2.5 0 0,0 7.5,13M16.5,13A2.5,2.5 0 0,0 14,15.5A2.5,2.5 0 0,0 16.5,18A2.5,2.5 0 0,0 19,15.5A2.5,2.5 0 0,0 16.5,13Z"/>
+                    </svg>
+                </button>
+                <button class="sidebar-tab" data-tab="pomodoro">
+                    <span style="font-size: 20px; color: #8b5cf6;">🍅</span>
+                </button>
+                <button class="sidebar-tab" data-tab="project">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M13,9H18V7H13V9M13,13H18V11H13V13M13,17H18V15H13V17M11,15H6V13H11V15M11,11H6V9H11V11M11,7H6V5H11V7Z"/>
+                    </svg>
+                </button>
+
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- 记事本 -->
+            <div id="notes" class="tab-content active">
+                <div class="notes-header">
+                    <div class="notes-controls">
+                        <div class="search-container">
+                            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
+                            </svg>
+                            <input type="text" class="search-input" id="searchNotes" placeholder="搜索笔记..." oninput="searchNotes()">
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="insertImage()">
+                    </div>
+                </div>
+                <div class="notes-section">
+                    <div class="notes-list-container">
+                        <div class="notes-list-header">
+                            <h3>笔记列表</h3>
+                            <span class="notes-count" id="notesCount">0 条笔记</span>
+                        </div>
+                        <div class="notes-list" id="notesList">
+                            <div class="empty-state" id="emptyState">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                                </svg>
+                                <p>还没有笔记</p>
+                                <p>点击右下角的➕按钮开始记录你的想法</p>
+                            </div>
+                        </div>
+                        <button class="add-note-btn" onclick="createNote()" title="新建笔记">
+                            ➕
+                        </button>
+                    </div>
+                    <div class="note-editor">
+                        <div class="editor-header">
+                            <div class="title-input-container">
+                                <input type="text" class="note-title" id="noteTitle" placeholder="笔记标题...">
+                                <button class="polish-title-btn" onclick="polishTitle()" title="润色标题">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10Z"/>
+                                    </svg>
+                                    润色
+                                </button>
+                            </div>
+                         </div>
+ 
+                         <div class="note-content-container">
+                             <div class="editor-actions">
+                                 <button class="btn-icon" onclick="formatText('bold')" title="加粗">
+                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                         <path d="M15.6,10.79C16.57,10.11 17.25,9.02 17.25,8C17.25,5.74 15.5,4 13.25,4H7V18H14.04C16.14,18 17.75,16.3 17.75,14.21C17.75,12.69 16.89,11.39 15.6,10.79M10,6.5H13C13.83,6.5 14.5,7.17 14.5,8C14.5,8.83 13.83,9.5 13,9.5H10V6.5M10,12H14C14.83,12 15.5,12.67 15.5,13.5C15.5,14.33 14.83,15 14,15H10V12Z"/>
+                                     </svg>
+                                 </button>
+                                 <button class="btn-icon" onclick="showColorPicker()" title="文字颜色">
+                                     🎨
+                                 </button>
+                                 <button class="btn-icon" onclick="document.getElementById('imageInput').click()" title="插入图片">
+                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                         <path d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z"/>
+                                     </svg>
+                                 </button>
+                                 <div id="colorPicker" class="color-picker" style="display: none;">
+                                     <div class="color-options">
+                                         <!-- 基础颜色 -->
+                                         <button class="color-option" data-color="#000000" style="background-color: #000000;" onclick="applyTextColor('#000000')" title="黑色"></button>
+                                         <button class="color-option" data-color="#333333" style="background-color: #333333;" onclick="applyTextColor('#333333')" title="深灰"></button>
+                                         <button class="color-option" data-color="#666666" style="background-color: #666666;" onclick="applyTextColor('#666666')" title="灰色"></button>
+                                         <button class="color-option" data-color="#999999" style="background-color: #999999;" onclick="applyTextColor('#999999')" title="浅灰"></button>
+                                         
+                                         <!-- 红色系 -->
+                                         <button class="color-option" data-color="#ff0000" style="background-color: #ff0000;" onclick="applyTextColor('#ff0000')" title="红色"></button>
+                                         <button class="color-option" data-color="#ff6b6b" style="background-color: #ff6b6b;" onclick="applyTextColor('#ff6b6b')" title="浅红"></button>
+                                         <button class="color-option" data-color="#e74c3c" style="background-color: #e74c3c;" onclick="applyTextColor('#e74c3c')" title="深红"></button>
+                                         <button class="color-option" data-color="#c0392b" style="background-color: #c0392b;" onclick="applyTextColor('#c0392b')" title="暗红"></button>
+                                         
+                                         <!-- 橙色系 -->
+                                         <button class="color-option" data-color="#ffa500" style="background-color: #ffa500;" onclick="applyTextColor('#ffa500')" title="橙色"></button>
+                                         <button class="color-option" data-color="#f39c12" style="background-color: #f39c12;" onclick="applyTextColor('#f39c12')" title="深橙"></button>
+                                         <button class="color-option" data-color="#e67e22" style="background-color: #e67e22;" onclick="applyTextColor('#e67e22')" title="暗橙"></button>
+                                         <button class="color-option" data-color="#d35400" style="background-color: #d35400;" onclick="applyTextColor('#d35400')" title="棕橙"></button>
+                                         
+                                         <!-- 黄色系 -->
+                                         <button class="color-option" data-color="#ffff00" style="background-color: #ffff00;" onclick="applyTextColor('#ffff00')" title="黄色"></button>
+                                         <button class="color-option" data-color="#f1c40f" style="background-color: #f1c40f;" onclick="applyTextColor('#f1c40f')" title="金黄"></button>
+                                         <button class="color-option" data-color="#f39800" style="background-color: #f39800;" onclick="applyTextColor('#f39800')" title="深黄"></button>
+                                         <button class="color-option" data-color="#e6ac00" style="background-color: #e6ac00;" onclick="applyTextColor('#e6ac00')" title="暗黄"></button>
+                                         
+                                         <!-- 绿色系 -->
+                                         <button class="color-option" data-color="#00ff00" style="background-color: #00ff00;" onclick="applyTextColor('#00ff00')" title="绿色"></button>
+                                         <button class="color-option" data-color="#2ecc71" style="background-color: #2ecc71;" onclick="applyTextColor('#2ecc71')" title="翠绿"></button>
+                                         <button class="color-option" data-color="#27ae60" style="background-color: #27ae60;" onclick="applyTextColor('#27ae60')" title="深绿"></button>
+                                         <button class="color-option" data-color="#16a085" style="background-color: #16a085;" onclick="applyTextColor('#16a085')" title="青绿"></button>
+                                         
+                                         <!-- 蓝色系 -->
+                                         <button class="color-option" data-color="#0000ff" style="background-color: #0000ff;" onclick="applyTextColor('#0000ff')" title="蓝色"></button>
+                                         <button class="color-option" data-color="#3498db" style="background-color: #3498db;" onclick="applyTextColor('#3498db')" title="天蓝"></button>
+                                         <button class="color-option" data-color="#2980b9" style="background-color: #2980b9;" onclick="applyTextColor('#2980b9')" title="深蓝"></button>
+                                         <button class="color-option" data-color="#1f4e79" style="background-color: #1f4e79;" onclick="applyTextColor('#1f4e79')" title="暗蓝"></button>
+                                         
+                                         <!-- 紫色系 -->
+                                         <button class="color-option" data-color="#8b5cf6" style="background-color: #8b5cf6;" onclick="applyTextColor('#8b5cf6')" title="紫色"></button>
+                                         <button class="color-option" data-color="#9b59b6" style="background-color: #9b59b6;" onclick="applyTextColor('#9b59b6')" title="深紫"></button>
+                                         <button class="color-option" data-color="#8e44ad" style="background-color: #8e44ad;" onclick="applyTextColor('#8e44ad')" title="暗紫"></button>
+                                         <button class="color-option" data-color="#663399" style="background-color: #663399;" onclick="applyTextColor('#663399')" title="紫罗兰"></button>
+                                     </div>
+                                 </div>
+                             </div>
+                             <div class="note-content" id="noteContent" contenteditable="true" data-placeholder="在这里写下你的想法..."></div>
+                         </div>
+                        <div class="editor-footer">
+                            <div class="editor-info">
+                                <span id="wordCount">0 字</span>
+                                <span id="lastSaved"></span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 待办事项 -->
+            <div id="todo" class="tab-content">
+                <div class="todo-grid" id="todoGrid">
+                    <div class="todo-project-card">
+                        <div class="project-title-container">
+                            <input type="text" class="project-title-input" placeholder="项目标题..." onchange="updateProjectTitle(0, this.value)">
+                            <button class="delete-project-btn" onclick="deleteProject(0)" title="删除项目">🗑️</button>
+                        </div>
+                        <div class="project-tasks-container">
+                            <div class="task-list" id="taskList0"></div>
+                            <div class="add-task-container">
+                                <input type="text" class="add-task-input" placeholder="添加新任务..." onkeypress="handleAddTask(event, 0)">
+                                <button class="add-task-btn" onclick="addTask(0)" title="添加任务">➕</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="todo-project-card">
+                        <div class="project-title-container">
+                            <input type="text" class="project-title-input" placeholder="项目标题..." onchange="updateProjectTitle(1, this.value)">
+                            <button class="delete-project-btn" onclick="deleteProject(1)" title="删除项目">🗑️</button>
+                        </div>
+                        <div class="project-tasks-container">
+                            <div class="task-list" id="taskList1"></div>
+                            <div class="add-task-container">
+                                <input type="text" class="add-task-input" placeholder="添加新任务..." onkeypress="handleAddTask(event, 1)">
+                                <button class="add-task-btn" onclick="addTask(1)" title="添加任务">➕</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="todo-project-card">
+                        <div class="project-title-container">
+                            <input type="text" class="project-title-input" placeholder="项目标题..." onchange="updateProjectTitle(2, this.value)">
+                            <button class="delete-project-btn" onclick="deleteProject(2)" title="删除项目">🗑️</button>
+                        </div>
+                        <div class="project-tasks-container">
+                            <div class="task-list" id="taskList2"></div>
+                            <div class="add-task-container">
+                                <input type="text" class="add-task-input" placeholder="添加新任务..." onkeypress="handleAddTask(event, 2)">
+                                <button class="add-task-btn" onclick="addTask(2)" title="添加任务">➕</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="todo-project-card">
+                        <div class="project-title-container">
+                            <input type="text" class="project-title-input" placeholder="项目标题..." onchange="updateProjectTitle(3, this.value)">
+                            <button class="delete-project-btn" onclick="deleteProject(3)" title="删除项目">🗑️</button>
+                        </div>
+                        <div class="project-tasks-container">
+                            <div class="task-list" id="taskList3"></div>
+                            <div class="add-task-container">
+                                <input type="text" class="add-task-input" placeholder="添加新任务..." onkeypress="handleAddTask(event, 3)">
+                                <button class="add-task-btn" onclick="addTask(3)" title="添加任务">➕</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="add-project-btn" onclick="createProject()" title="新建项目">
+                    ➕
+                </button>
+            </div>
+            
+            <!-- AI搜索 -->
+            <div id="ai" class="tab-content">
+                <div class="ai-section">
+                    <div class="ai-conversations-container">
+                        <div class="ai-conversations-header">
+                            <h3>对话记录</h3>
+                            <span class="conversations-count" id="conversationsCount">0 个对话</span>
+                        </div>
+                        <div class="ai-conversations-list" id="aiConversationsList">
+                            <div class="empty-state" id="aiEmptyState">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                                    <path d="M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7H14A7,7 0 0,1 21,14H22A1,1 0 0,1 23,15V18A1,1 0 0,1 22,19H21V20A2,2 0 0,1 19,22H5A2,2 0 0,1 3,20V19H2A1,1 0 0,1 1,18V15A1,1 0 0,1 2,14H3A7,7 0 0,1 10,7H11V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2Z"/>
+                                </svg>
+                                <p>还没有对话记录</p>
+                                <p>开始与AI助手对话吧</p>
+                            </div>
+                        </div>
+                        <button class="add-conversation-btn" onclick="createNewConversation()" title="新建对话">
+                            ➕
+                        </button>
+                    </div>
+                    <div class="ai-chat-container">
+                        <div class="ai-chat" id="aiChat">
+                            <div class="message ai">
+                                <strong>AI助手:</strong> 你好！我是你的AI助手，有什么可以帮助你的吗？
+                            </div>
+                        </div>
+                        <div class="ai-controls">
+                            <input type="text" class="ai-input" id="aiInput" placeholder="输入你的问题..." onkeypress="handleAiKeyPress(event)">
+                            <select class="ai-model-select" id="aiModel">
+                                <option value="deepseek">DeepSeek Chat</option>
+                                <option value="kimi">kimi-k2</option>
+                            </select>
+                            <button class="ai-send-btn" onclick="sendAiQuery()">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 番茄钟 -->
+            <div id="pomodoro" class="tab-content">
+                <div class="pomodoro-section">
+                    <div class="pomodoro-main">
+                        <div class="pomodoro-timer-container">
+                            <div class="pomodoro-display" id="pomodoroDisplay">
+                                <div class="pomodoro-icon">🍅</div>
+                                <div class="pomodoro-time" id="pomodoroTime">25:00</div>
+                                <div class="pomodoro-status" id="pomodoroStatus">准备开始专注</div>
+                            </div>
+                            
+                            <div class="pomodoro-controls" id="pomodoroControls">
+                                <div class="time-selector" id="timeSelector">
+                                    <label>专注时长：</label>
+                                    <select id="focusTime">
+                                        <option value="25">25分钟</option>
+                                        <option value="30">30分钟</option>
+                                        <option value="45">45分钟</option>
+                                        <option value="60">60分钟</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="pomodoro-buttons">
+                                    <button class="pomodoro-btn start-btn" id="startBtn" onclick="startPomodoro()">🍅 开始专注</button>
+                                    <button class="pomodoro-btn pause-btn" id="pauseBtn" onclick="pausePomodoro()" style="display: none;">⏸️ 暂停</button>
+                                    <button class="pomodoro-btn resume-btn" id="resumeBtn" onclick="resumePomodoro()" style="display: none;">▶️ 继续</button>
+                                    <button class="pomodoro-btn reset-btn" id="resetBtn" onclick="resetPomodoro()" style="display: none;">🔄 重置</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧功能按钮 -->
+                    <div class="pomodoro-side-buttons">
+                        <button class="pomodoro-side-btn" onclick="toggleStatsSidebar()" title="专注统计">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 3v18h18"/>
+                                <path d="M7 12l3-3 3 3 5-5"/>
+                            </svg>
+                        </button>
+                        <button class="pomodoro-side-btn" onclick="toggleRecordsSidebar()" title="专注记录">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10,9 9,9 8,9"/>
+                            </svg>
+                        </button>
+                        <button class="color-change-btn" onclick="changeBackgroundColor()" title="随机变色">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 2a10 10 0 0 0 0 20 10 10 0 0 1 0-20z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+            
+            <!-- 项目管理 -->
+            <div id="project" class="tab-content">
+                <div class="project-header">
+                    <div class="project-title">
+                        <h2>📋 项目管理</h2>
+                        <p>看板式任务管理，让工作更有序</p>
+                    </div>
+                    <button class="add-task-btn" onclick="showTaskModal()" title="新建任务">
+                        ➕
+                    </button>
+                </div>
+                
+                <div class="kanban-board">
+                    <div class="kanban-column" data-status="todo">
+                        <div class="column-header">
+                            <h3>📝 待办</h3>
+                            <span class="task-count" id="todoCount">0</span>
+                        </div>
+                        <div class="task-list" id="todoList" ondrop="dropTask(event)" ondragover="allowDrop(event)">
+                            <div class="empty-column">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                                    <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                                </svg>
+                                <p>暂无待办任务</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="kanban-column" data-status="in_progress">
+                        <div class="column-header">
+                            <h3>🔄 进行中</h3>
+                            <span class="task-count" id="progressCount">0</span>
+                        </div>
+                        <div class="task-list" id="progressList" ondrop="dropTask(event)" ondragover="allowDrop(event)">
+                            <div class="empty-column">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                                    <path d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z"/>
+                                </svg>
+                                <p>暂无进行中任务</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="kanban-column" data-status="done">
+                        <div class="column-header">
+                            <h3>✅ 已完成</h3>
+                            <span class="task-count" id="doneCount">0</span>
+                        </div>
+                        <div class="task-list" id="doneList" ondrop="dropTask(event)" ondragover="allowDrop(event)">
+                            <div class="empty-column">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                                    <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/>
+                                </svg>
+                                <p>暂无已完成任务</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 任务编辑模态框 -->
+    <div id="taskModal" class="task-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">新建任务</h3>
+                <button class="modal-close" onclick="hideTaskModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <div class="form-group">
+                        <label for="taskName">任务名称 *</label>
+                        <input type="text" id="taskName" name="name" required placeholder="请输入任务名称">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDescription">任务描述</label>
+                        <textarea id="taskDescription" name="description" rows="3" placeholder="请输入任务描述（可选）"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskAssignee">负责人</label>
+                            <input type="text" id="taskAssignee" name="assignee" placeholder="请输入负责人">
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDueDate">截止日期</label>
+                            <input type="date" id="taskDueDate" name="dueDate">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskStatus">状态</label>
+                        <select id="taskStatus" name="status">
+                            <option value="todo">待办</option>
+                            <option value="in_progress">进行中</option>
+                            <option value="done">已完成</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="hideTaskModal()">取消</button>
+                <button type="button" class="btn-primary" onclick="saveTask()">保存</button>
+                <button type="button" class="btn-danger" id="deleteTaskBtn" onclick="deleteTask()" style="display: none;">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 专注统计侧边栏 -->
+    <div id="statsSidebar" class="pomodoro-sidebar" style="transform: translateX(100%);">
+        <div class="sidebar-header">
+            <h3>📊 专注统计</h3>
+            <button class="sidebar-close" onclick="toggleStatsSidebar()">×</button>
+        </div>
+        <div class="sidebar-body">
+            <div class="stats-tabs">
+                <button class="stats-tab active" data-period="day" onclick="switchStatsPeriod('day')">日</button>
+                <button class="stats-tab" data-period="week" onclick="switchStatsPeriod('week')">周</button>
+                <button class="stats-tab" data-period="month" onclick="switchStatsPeriod('month')">月</button>
+                <button class="stats-tab" data-period="year" onclick="switchStatsPeriod('year')">年</button>
+            </div>
+            <div class="stats-content" id="statsContent">
+                <div class="stats-summary">
+                    <div class="stat-item">
+                        <span class="stat-label">今日专注</span>
+                        <span class="stat-value" id="todayFocus">0分钟</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">专注次数</span>
+                        <span class="stat-value" id="todayCount">0次</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 专注记录侧边栏 -->
+    <div id="recordsSidebar" class="pomodoro-sidebar" style="transform: translateX(100%);">
+        <div class="sidebar-header">
+            <h3>📝 专注记录</h3>
+            <button class="sidebar-close" onclick="toggleRecordsSidebar()">×</button>
+        </div>
+        <div class="sidebar-body">
+            <div class="records-header">
+                <span class="records-count" id="recordsCount">0 条记录</span>
+            </div>
+            <div class="records-list" id="recordsList">
+                <div class="empty-state" id="recordsEmptyState">
+                    <span style="font-size: 48px; opacity: 0.3;">🍅</span>
+                    <p>还没有专注记录</p>
+                    <p>开始你的第一次专注吧</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 波浪背景容器 -->
+    <div id="waves-background" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+    "></div>
+
+    <!-- 引入波浪背景脚本 -->
+    <script src="waves-background.js"></script>
+    
+    <script src="app.js"></script>
+    
+    <!-- 初始化波浪背景 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🌊 开始初始化新版波浪背景...');
+            
+            const wavesContainer = document.getElementById('waves-background');
+            if (wavesContainer && window.WavesBackground) {
+                // 创建波浪背景实例
+                const wavesInstance = new window.WavesBackground(wavesContainer, {
+                    lineColor: 'rgba(139, 92, 246, 0.4)',
+                    backgroundColor: 'transparent',
+                    waveSpeedX: 0.015,
+                    waveSpeedY: 0.008,
+                    waveAmpX: 40,
+                    waveAmpY: 20,
+                    xGap: 12,
+                    yGap: 35,
+                    friction: 0.92,
+                    tension: 0.008,
+                    maxCursorMove: 120
+                });
+                
+                // 保存到全局变量以便调试
+                window.wavesInstance = wavesInstance;
+                console.log('✅ 新版波浪背景初始化成功');
+            } else {
+                console.error('❌ 波浪背景初始化失败：容器或类未找到');
+            }
+        });
+    </script>
+</body>
+</html>

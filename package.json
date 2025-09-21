@@ -1,0 +1,41 @@
+{
+  "name": "personal-web-app",
+  "version": "1.0.0",
+  "description": "个人工作台 - 集成记事本、待办事项和AI搜索的Web应用",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "install-deps": "npm install",
+    "setup": "npm install && echo '\n✅ 依赖安装完成！\n💡 运行 npm start 启动应用\n⚙️  编辑 config.json 配置API密钥'"
+  },
+  "keywords": [
+    "notes",
+    "todo",
+    "ai",
+    "personal",
+    "productivity",
+    "web-app"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/personal-web-app/issues"
+  },
+  "homepage": "https://github.com/yourusername/personal-web-app#readme"
+}

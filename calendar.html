@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>日历功能 - 个人工作台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            min-height: 100vh;
+            color: #333;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+        
+        .calendar-container {
+            flex: 1;
+            margin-left: 80px;
+            padding: 20px;
+            min-height: 100vh;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.1);
+        }
+        
+        .calendar-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #8b5cf6;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 4px;
+            border-radius: 8px;
+        }
+        
+        .view-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: #8b5cf6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .view-btn.active {
+            background: rgba(139, 92, 246, 0.3);
+            color: white;
+        }
+        
+        .calendar-grid {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.1);
+        }
+        
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .weekday {
+            text-align: center;
+            font-weight: 600;
+            color: #8b5cf6;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.1);
+            font-size: 14px;
+        }
+        
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+        
+        .calendar-day {
+            min-height: 80px;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .calendar-day:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+        }
+        
+        .calendar-day.today {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        .calendar-day.selected {
+            background: rgba(139, 92, 246, 0.3);
+            border-color: #8b5cf6;
+        }
+        
+        .calendar-day.other-month {
+            opacity: 0.4;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .day-number {
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .day-events {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 60px;
+        }
+        
+        .day-event {
+            background: rgba(139, 92, 246, 0.3);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .day-event:hover {
+            background: rgba(139, 92, 246, 0.5);
+            transform: scale(1.05);
+        }
+        
+        .day-event.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+            background: rgba(107, 114, 128, 0.3);
+        }
+        
+        .event-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .event-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .event-modal-content {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            transform: scale(0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .event-modal.show .event-modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #8b5cf6;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #8b5cf6;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #8b5cf6;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(139, 92, 246, 0.2);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        .events-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .event-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .event-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .event-info {
+            flex: 1;
+        }
+        
+        .event-title {
+            font-weight: 500;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        
+        .event-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .event-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .event-action-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .event-action-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+        }
+        
+        .add-event-btn {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            background: transparent;
+            color: #8b5cf6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        
+        .add-event-btn:hover {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .today-btn {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .today-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        /* 周视图样式 */
+        .week-view {
+            display: none;
+        }
+        
+        .week-view.active {
+            display: block;
+        }
+        
+        .week-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(7, 1fr);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .time-slot {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .week-day-header {
+            background: rgba(139, 92, 246, 0.2);
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: #8b5cf6;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .week-day-slot {
+            background: rgba(255, 255, 255, 0.02);
+            min-height: 60px;
+            padding: 4px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .week-day-slot:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        .week-event {
+            background: rgba(139, 92, 246, 0.3);
+            color: white;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-bottom: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .week-event:hover {
+            background: rgba(139, 92, 246, 0.5);
+        }
+        
+        /* 月视图样式 */
+        .month-view.active {
+            display: block;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .calendar-container {
+                margin-left: 60px;
+                padding: 15px;
+            }
+            
+            .calendar-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .calendar-nav {
+                justify-content: center;
+            }
+            
+            .calendar-days {
+                gap: 5px;
+            }
+            
+            .calendar-day {
+                min-height: 60px;
+                padding: 5px;
+            }
+            
+            .week-grid {
+                grid-template-columns: 60px repeat(7, 1fr);
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .calendar-container {
+                margin-left: 50px;
+                padding: 10px;
+            }
+            
+            .calendar-day {
+                min-height: 50px;
+            }
+            
+            .day-number {
+                font-size: 12px;
+            }
+            
+            .week-grid {
+                grid-template-columns: 50px repeat(7, 1fr);
+            }
+            
+            .time-slot {
+                font-size: 10px;
+                padding: 4px 2px;
+            }
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #7c3aed, #9333ea);
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .calendar-container {
+            animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .calendar-day {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        .calendar-day:nth-child(7n+1) { animation-delay: 0.1s; }
+        .calendar-day:nth-child(7n+2) { animation-delay: 0.15s; }
+        .calendar-day:nth-child(7n+3) { animation-delay: 0.2s; }
+        .calendar-day:nth-child(7n+4) { animation-delay: 0.25s; }
+        .calendar-day:nth-child(7n+5) { animation-delay: 0.3s; }
+        .calendar-day:nth-child(7n+6) { animation-delay: 0.35s; }
+        .calendar-day:nth-child(7n+7) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-tabs">
+            <button class="sidebar-tab" onclick="window.location.href='index.html'" title="返回工作台">
+                <svg viewBox="0 0 24 24">
+                    <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z"/>
+                </svg>
+            </button>
+            <button class="sidebar-tab active" data-tab="calendar" title="日历">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 日历主体 -->
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <h1 class="calendar-title" id="calendarTitle">2024年1月</h1>
+            <div class="calendar-nav">
+                <button class="nav-btn" onclick="previousPeriod()">‹ 上月</button>
+                <button class="today-btn" onclick="goToToday()">今天</button>
+                <button class="nav-btn" onclick="nextPeriod()">下月 ›</button>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="month" onclick="switchView('month')">月视图</button>
+                <button class="view-btn" data-view="week" onclick="switchView('week')">周视图</button>
+            </div>
+        </div>
+        
+        <!-- 月视图 -->
+        <div class="month-view calendar-grid" id="monthView">
+            <div class="calendar-weekdays">
+                <div class="weekday">日</div>
+                <div class="weekday">一</div>
+                <div class="weekday">二</div>
+                <div class="weekday">三</div>
+                <div class="weekday">四</div>
+                <div class="weekday">五</div>
+                <div class="weekday">六</div>
+            </div>
+            <div class="calendar-days" id="calendarDays">
+                <!-- 日历日期将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 周视图 -->
+        <div class="week-view calendar-grid" id="weekView">
+            <div class="week-grid" id="weekGrid">
+                <!-- 周视图将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 事件模态框 -->
+    <div class="event-modal" id="eventModal">
+        <div class="event-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="eventModalTitle">日程安排</h2>
+                <button class="modal-close" onclick="closeEventModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="events-list" id="eventsList">
+                    <!-- 事件列表将通过JavaScript动态生成 -->
+                </div>
+                <button class="add-event-btn" onclick="showAddEventForm()">
+                    ➕ 添加新事件
+                </button>
+                
+                <!-- 添加事件表单 -->
+                <div id="addEventForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div class="form-group">
+                        <label for="eventTitle">事件标题 *</label>
+                        <input type="text" id="eventTitle" placeholder="请输入事件标题">
+                    </div>
+                    <div class="form-group">
+                        <label for="eventDescription">事件描述</label>
+                        <textarea id="eventDescription" placeholder="请输入事件描述（可选）" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eventStartTime">开始时间</label>
+                            <input type="time" id="eventStartTime">
+                        </div>
+                        <div class="form-group">
+                            <label for="eventEndTime">结束时间</label>
+                            <input type="time" id="eventEndTime">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventType">事件类型</label>
+                        <select id="eventType">
+                            <option value="task">任务</option>
+                            <option value="meeting">会议</option>
+                            <option value="reminder">提醒</option>
+                            <option value="personal">个人</option>
+                            <option value="work">工作</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="eventAllDay"> 全天事件
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeEventModal()">关闭</button>
+                <button class="btn-primary" id="saveEventBtn" onclick="saveEvent()" style="display: none;">保存事件</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="calendar.js"></script>
+</body>
+</html>

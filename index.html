@@ -2931,6 +2931,302 @@
             border-color: rgba(139, 92, 246, 0.3);
         }
         
+        /* 日历功能样式 */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.1);
+        }
+        
+        .calendar-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #8b5cf6;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .calendar-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .calendar-grid {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.1);
+        }
+        
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .weekday {
+            text-align: center;
+            font-weight: 600;
+            color: #8b5cf6;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.1);
+            font-size: 14px;
+        }
+        
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+        
+        .calendar-day {
+            min-height: 80px;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .calendar-day:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+        }
+        
+        .calendar-day.today {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        .calendar-day.selected {
+            background: rgba(139, 92, 246, 0.3);
+            border-color: #8b5cf6;
+        }
+        
+        .calendar-day.other-month {
+            opacity: 0.4;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .day-number {
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .day-events {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 60px;
+        }
+        
+        .day-event {
+            background: rgba(139, 92, 246, 0.3);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .day-event:hover {
+            background: rgba(139, 92, 246, 0.5);
+            transform: scale(1.05);
+        }
+        
+        .day-event.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+            background: rgba(107, 114, 128, 0.3);
+        }
+        
+        .nav-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .today-btn {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .today-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        
+        .add-event-btn {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            background: transparent;
+            color: #8b5cf6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        
+        .add-event-btn:hover {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
+        /* 日历事件模态框样式 */
+        .events-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .event-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .event-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .event-info {
+            flex: 1;
+        }
+        
+        .event-title {
+            font-weight: 500;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        
+        .event-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .event-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .event-action-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .event-action-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+        }
+        
+        /* 响应式日历样式 */
+        @media (max-width: 768px) {
+            .calendar-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .calendar-nav {
+                justify-content: center;
+            }
+            
+            .calendar-actions {
+                justify-content: center;
+            }
+            
+            .calendar-days {
+                gap: 5px;
+            }
+            
+            .calendar-day {
+                min-height: 60px;
+                padding: 5px;
+            }
+            
+            .day-events {
+                max-height: 40px;
+            }
+            
+            .day-event {
+                font-size: 9px;
+                padding: 1px 3px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .calendar-day {
+                min-height: 50px;
+            }
+            
+            .day-number {
+                font-size: 12px;
+            }
+            
+            .weekday {
+                font-size: 12px;
+                padding: 8px 4px;
+            }
+        }
+        
         /* 响应式设计 */
         @media (max-width: 768px) {
             .kanban-board {
@@ -2983,6 +3279,11 @@
                 <button class="sidebar-tab" data-tab="project">
                     <svg viewBox="0 0 24 24">
                         <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M13,9H18V7H13V9M13,13H18V11H13V13M13,17H18V15H13V17M11,15H6V13H11V15M11,11H6V9H11V11M11,7H6V5H11V7Z"/>
+                    </svg>
+                </button>
+                <button class="sidebar-tab" data-tab="calendar">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z"/>
                     </svg>
                 </button>
 
@@ -3328,6 +3629,94 @@
                                 </svg>
                                 <p>暂无已完成任务</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 日历功能 -->
+            <div id="calendar" class="tab-content">
+                <div class="calendar-header">
+                    <h1 class="calendar-title" id="calendarTitle">2024年日历</h1>
+                    <div class="calendar-nav">
+                        <button class="nav-btn" onclick="previousCalendarPeriod()">‹ 上月</button>
+                        <button class="today-btn" onclick="goToTodayCalendar()">今天</button>
+                        <button class="nav-btn" onclick="nextCalendarPeriod()">下月 ›</button>
+                    </div>
+                    <div class="calendar-actions">
+                        <button class="btn btn-primary" onclick="showAddCalendarEvent()">➕ 新建事件</button>
+                        <button class="btn btn-secondary" onclick="syncCalendarWithTasks()">🔄 同步任务</button>
+                    </div>
+                </div>
+                
+                <div class="calendar-grid">
+                    <div class="calendar-weekdays">
+                        <div class="weekday">日</div>
+                        <div class="weekday">一</div>
+                        <div class="weekday">二</div>
+                        <div class="weekday">三</div>
+                        <div class="weekday">四</div>
+                        <div class="weekday">五</div>
+                        <div class="weekday">六</div>
+                    </div>
+                    <div class="calendar-days" id="calendarDays">
+                        <!-- 日历日期将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 日历事件模态框 -->
+                <div id="calendarEventModal" class="custom-modal" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="calendarEventModalTitle">日程安排</h3>
+                            <button class="modal-close" onclick="closeCalendarEventModal()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="events-list" id="calendarEventsList">
+                                <!-- 事件列表将通过JavaScript动态生成 -->
+                            </div>
+                            <button class="add-event-btn" onclick="showAddCalendarEventForm()">➕ 添加新事件</button>
+                            
+                            <!-- 添加事件表单 -->
+                            <div id="addCalendarEventForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                                <div class="form-group">
+                                    <label for="calendarEventTitle">事件标题 *</label>
+                                    <input type="text" id="calendarEventTitle" placeholder="请输入事件标题">
+                                </div>
+                                <div class="form-group">
+                                    <label for="calendarEventDescription">事件描述</label>
+                                    <textarea id="calendarEventDescription" placeholder="请输入事件描述（可选）" rows="3"></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="calendarEventStartTime">开始时间</label>
+                                        <input type="time" id="calendarEventStartTime">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="calendarEventEndTime">结束时间</label>
+                                        <input type="time" id="calendarEventEndTime">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="calendarEventType">事件类型</label>
+                                    <select id="calendarEventType">
+                                        <option value="task">📋 任务</option>
+                                        <option value="meeting">👥 会议</option>
+                                        <option value="reminder">🔔 提醒</option>
+                                        <option value="personal">👤 个人</option>
+                                        <option value="work">💼 工作</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="calendarEventAllDay"> 全天事件
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeCalendarEventModal()">关闭</button>
+                            <button type="button" class="btn btn-primary" id="saveCalendarEventBtn" onclick="saveCalendarEvent()" style="display: none;">保存事件</button>
                         </div>
                     </div>
                 </div>

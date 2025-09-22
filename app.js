@@ -10,6 +10,13 @@ let noteIdCounter = parseInt(localStorage.getItem('noteIdCounter')) || 1;
 let todoIdCounter = parseInt(localStorage.getItem('todoIdCounter')) || 1;
 let autoSaveTimer = null;
 
+// 日历功能全局变量
+let calendarEvents = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+let currentCalendarDate = new Date();
+let selectedCalendarDate = null;
+let editingCalendarEvent = null;
+let calendarEventIdCounter = parseInt(localStorage.getItem('calendarEventIdCounter')) || 1;
+
 // 初始化四个项目的待办数据结构
 let todoProjects = JSON.parse(localStorage.getItem('todoProjects')) || [
     { id: 0, title: '', tasks: [] },
@@ -24,6 +31,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTodos();
     loadAiHistory();
     loadAiConversations();
+    
+    // 初始化日历功能
+    initCalendar();
     
     // 如果没有选中的笔记且有笔记存在，自动选择第一个笔记
     if (!currentNoteId && notes.length > 0) {
@@ -2780,6 +2790,543 @@ if (originalSwitchTabFunction) {
             setTimeout(() => {
                 loadProjectTasks();
             }, 100);
+        } else if (tabName === 'calendar') {
+            // 延迟加载确保DOM已渲染
+            setTimeout(() => {
+                renderCalendar();
+            }, 100);
         }
     };
+}
+
+// ==================== 日历功能 ====================
+
+// 初始化日历功能
+function initCalendar() {
+    console.log('📅 初始化日历功能...');
+    
+    // 添加日历事件监听器
+    const calendarEventAllDay = document.getElementById('calendarEventAllDay');
+    if (calendarEventAllDay) {
+        calendarEventAllDay.addEventListener('change', function() {
+            const startTimeInput = document.getElementById('calendarEventStartTime');
+            const endTimeInput = document.getElementById('calendarEventEndTime');
+            
+            if (this.checked) {
+                startTimeInput.disabled = true;
+                endTimeInput.disabled = true;
+                startTimeInput.value = '';
+                endTimeInput.value = '';
+            } else {
+                startTimeInput.disabled = false;
+                endTimeInput.disabled = false;
+            }
+        });
+    }
+    
+    console.log('✅ 日历功能初始化完成');
+}
+
+// 渲染日历
+function renderCalendar() {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    
+    // 更新标题
+    document.getElementById('calendarTitle').textContent = `${year}年${month + 1}月`;
+    
+    // 获取月份信息
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    
+    // 获取上个月的天数
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
+    
+    const calendarDays = document.getElementById('calendarDays');
+    calendarDays.innerHTML = '';
+    
+    // 添加上个月的日期
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const dayElement = createCalendarDayElement(day, month - 1, year, true);
+        calendarDays.appendChild(dayElement);
+    }
+    
+    // 添加当前月的日期
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = createCalendarDayElement(day, month, year, false);
+        calendarDays.appendChild(dayElement);
+    }
+    
+    // 添加下个月的日期
+    const remainingDays = 42 - (firstDay + daysInMonth);
+    for (let day = 1; day <= remainingDays; day++) {
+        const dayElement = createCalendarDayElement(day, month + 1, year, true);
+        calendarDays.appendChild(dayElement);
+    }
+}
+
+// 创建日历日期元素
+function createCalendarDayElement(day, month, year, isOtherMonth) {
+    const dayElement = document.createElement('div');
+    dayElement.className = 'calendar-day';
+    
+    if (isOtherMonth) {
+        dayElement.classList.add('other-month');
+    }
+    
+    // 检查是否是今天
+    const today = new Date();
+    const currentDateObj = new Date(year, month, day);
+    if (isSameCalendarDay(currentDateObj, today)) {
+        dayElement.classList.add('today');
+    }
+    
+    // 日期数字
+    const dayNumber = document.createElement('div');
+    dayNumber.className = 'day-number';
+    dayNumber.textContent = day;
+    dayElement.appendChild(dayNumber);
+    
+    // 事件容器
+    const dayEvents = document.createElement('div');
+    dayEvents.className = 'day-events';
+    
+    // 获取该日期的事件
+    const dateString = formatCalendarDateString(currentDateObj);
+    const dayEventsList = getCalendarEventsForDate(dateString);
+    
+    // 显示事件
+    dayEventsList.slice(0, 3).forEach(event => { // 最多显示3个事件
+        const eventElement = createCalendarDayEventElement(event);
+        dayEvents.appendChild(eventElement);
+    });
+    
+    // 如果还有更多事件，显示计数
+    if (dayEventsList.length > 3) {
+        const moreElement = document.createElement('div');
+        moreElement.className = 'day-event';
+        moreElement.style.background = 'rgba(139, 92, 246, 0.6)';
+        moreElement.textContent = `+${dayEventsList.length - 2} 更多`;
+        moreElement.title = `还有 ${dayEventsList.length - 2} 个事件`;
+        dayEvents.appendChild(moreElement);
+    }
+    
+    dayElement.appendChild(dayEvents);
+    
+    // 添加点击事件
+    dayElement.addEventListener('click', function() {
+        selectCalendarDate(currentDateObj);
+    });
+    
+    return dayElement;
+}
+
+// 创建日历日期事件元素
+function createCalendarDayEventElement(event) {
+    const eventElement = document.createElement('div');
+    eventElement.className = 'day-event';
+    if (event.completed) {
+        eventElement.classList.add('completed');
+    }
+    
+    eventElement.textContent = event.title;
+    eventElement.title = event.description || event.title;
+    
+    // 添加点击事件
+    eventElement.addEventListener('click', function(e) {
+        e.stopPropagation();
+        editCalendarEvent(event);
+    });
+    
+    return eventElement;
+}
+
+// 获取指定日期的日历事件
+function getCalendarEventsForDate(dateString) {
+    return calendarEvents.filter(event => event.date === dateString);
+}
+
+// 格式化日期字符串
+function formatCalendarDateString(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// 检查是否为同一天
+function isSameCalendarDay(date1, date2) {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+}
+
+// 选择日历日期
+function selectCalendarDate(date) {
+    selectedCalendarDate = date;
+    showCalendarEventModal(date);
+}
+
+// 显示日历事件模态框
+function showCalendarEventModal(date) {
+    const modal = document.getElementById('calendarEventModal');
+    const modalTitle = document.getElementById('calendarEventModalTitle');
+    
+    // 设置标题
+    const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+    modalTitle.textContent = dateStr;
+    
+    // 显示该日期的事件
+    renderCalendarEventsList(date);
+    
+    // 显示模态框
+    modal.classList.add('show');
+    
+    // 重置表单
+    resetCalendarEventForm();
+}
+
+// 关闭日历事件模态框
+function closeCalendarEventModal() {
+    const modal = document.getElementById('calendarEventModal');
+    modal.classList.remove('show');
+    editingCalendarEvent = null;
+}
+
+// 渲染日历事件列表
+function renderCalendarEventsList(date) {
+    const eventsList = document.getElementById('calendarEventsList');
+    const dateString = formatCalendarDateString(date);
+    const dayEvents = getCalendarEventsForDate(dateString);
+    
+    eventsList.innerHTML = '';
+    
+    if (dayEvents.length === 0) {
+        eventsList.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: rgba(255, 255, 255, 0.6);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                    <path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1"/>
+                </svg>
+                <p style="margin-top: 10px;">暂无事件安排</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // 按时间排序
+    dayEvents.sort((a, b) => {
+        if (a.allDay && !b.allDay) return -1;
+        if (!a.allDay && b.allDay) return 1;
+        if (a.allDay && b.allDay) return 0;
+        return a.startTime.localeCompare(b.startTime);
+    });
+    
+    dayEvents.forEach(event => {
+        const eventItem = createCalendarEventListItem(event);
+        eventsList.appendChild(eventItem);
+    });
+}
+
+// 创建日历事件列表项
+function createCalendarEventListItem(event) {
+    const eventItem = document.createElement('div');
+    eventItem.className = 'event-item';
+    
+    const timeText = event.allDay ? '全天' : `${event.startTime} - ${event.endTime}`;
+    const typeIcon = getCalendarEventTypeIcon(event.type);
+    
+    eventItem.innerHTML = `
+        <div class="event-info">
+            <div class="event-title">${typeIcon} ${event.title}</div>
+            <div class="event-time">${timeText}</div>
+            ${event.description ? `<div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-top: 2px;">${event.description}</div>` : ''}
+        </div>
+        <div class="event-actions">
+            <button class="event-action-btn" onclick="toggleCalendarEventComplete('${event.id}')" title="${event.completed ? '标记为未完成' : '标记为完成'}">
+                ${event.completed ? '↩️' : '✅'}
+            </button>
+            <button class="event-action-btn" onclick="editCalendarEvent('${event.id}')" title="编辑">
+                ✏️
+            </button>
+            <button class="event-action-btn" onclick="deleteCalendarEvent('${event.id}')" title="删除">
+                🗑️
+            </button>
+        </div>
+    `;
+    
+    return eventItem;
+}
+
+// 获取日历事件类型图标
+function getCalendarEventTypeIcon(type) {
+    const icons = {
+        task: '📋',
+        meeting: '👥',
+        reminder: '🔔',
+        personal: '👤',
+        work: '💼'
+    };
+    return icons[type] || '📅';
+}
+
+// 显示添加日历事件表单
+function showAddCalendarEventForm() {
+    const form = document.getElementById('addCalendarEventForm');
+    const saveBtn = document.getElementById('saveCalendarEventBtn');
+    
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    saveBtn.style.display = form.style.display === 'none' ? 'none' : 'block';
+    
+    if (form.style.display === 'block') {
+        // 自动填充一些默认值
+        document.getElementById('calendarEventTitle').focus();
+        
+        // 如果不是全天事件，设置默认时间
+        const allDayCheckbox = document.getElementById('calendarEventAllDay');
+        if (!allDayCheckbox.checked) {
+            const now = new Date();
+            const nextHour = new Date(now.getTime() + 60 * 60 * 1000);
+            
+            document.getElementById('calendarEventStartTime').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            document.getElementById('calendarEventEndTime').value = `${nextHour.getHours().toString().padStart(2, '0')}:${nextHour.getMinutes().toString().padStart(2, '0')}`;
+        }
+    }
+}
+
+// 保存日历事件
+function saveCalendarEvent() {
+    const title = document.getElementById('calendarEventTitle').value.trim();
+    const description = document.getElementById('calendarEventDescription').value.trim();
+    const startTime = document.getElementById('calendarEventStartTime').value;
+    const endTime = document.getElementById('calendarEventEndTime').value;
+    const type = document.getElementById('calendarEventType').value;
+    const allDay = document.getElementById('calendarEventAllDay').checked;
+    
+    if (!title) {
+        alert('请输入事件标题');
+        document.getElementById('calendarEventTitle').focus();
+        return;
+    }
+    
+    if (!allDay && (!startTime || !endTime)) {
+        alert('请输入开始和结束时间');
+        return;
+    }
+    
+    if (!allDay && startTime >= endTime) {
+        alert('结束时间必须晚于开始时间');
+        return;
+    }
+    
+    const dateString = formatCalendarDateString(selectedCalendarDate);
+    
+    if (editingCalendarEvent) {
+        // 编辑现有事件
+        const eventIndex = calendarEvents.findIndex(e => e.id === editingCalendarEvent.id);
+        if (eventIndex !== -1) {
+            calendarEvents[eventIndex] = {
+                ...editingCalendarEvent,
+                title,
+                description,
+                startTime,
+                endTime,
+                type,
+                allDay,
+                date: dateString
+            };
+        }
+    } else {
+        // 创建新事件
+        const newEvent = {
+            id: calendarEventIdCounter.toString(),
+            title,
+            description,
+            date: dateString,
+            startTime,
+            endTime,
+            type,
+            allDay,
+            completed: false
+        };
+        
+        calendarEvents.push(newEvent);
+        calendarEventIdCounter++;
+    }
+    
+    // 保存事件
+    saveCalendarEvents();
+    
+    // 重新渲染日历
+    renderCalendar();
+    
+    // 重新渲染事件列表
+    renderCalendarEventsList(selectedCalendarDate);
+    
+    // 重置表单
+    resetCalendarEventForm();
+    
+    console.log(`✅ 日历事件已保存: ${title}`);
+}
+
+// 编辑日历事件
+function editCalendarEvent(eventId) {
+    const event = calendarEvents.find(e => e.id === eventId);
+    if (!event) return;
+    
+    editingCalendarEvent = event;
+    
+    // 填充表单
+    document.getElementById('calendarEventTitle').value = event.title;
+    document.getElementById('calendarEventDescription').value = event.description || '';
+    document.getElementById('calendarEventStartTime').value = event.startTime || '';
+    document.getElementById('calendarEventEndTime').value = event.endTime || '';
+    document.getElementById('calendarEventType').value = event.type || 'task';
+    document.getElementById('calendarEventAllDay').checked = event.allDay || false;
+    
+    // 显示表单
+    showAddCalendarEventForm();
+    
+    // 更新保存按钮文本
+    document.getElementById('saveCalendarEventBtn').textContent = '更新事件';
+}
+
+// 切换日历事件完成状态
+function toggleCalendarEventComplete(eventId) {
+    const event = calendarEvents.find(e => e.id === eventId);
+    if (!event) return;
+    
+    event.completed = !event.completed;
+    saveCalendarEvents();
+    renderCalendar();
+    renderCalendarEventsList(selectedCalendarDate);
+    
+    console.log(`✅ 日历事件状态已更新: ${event.title} - ${event.completed ? '已完成' : '未完成'}`);
+}
+
+// 删除日历事件
+function deleteCalendarEvent(eventId) {
+    if (!confirm('确定要删除这个日历事件吗？')) return;
+    
+    const eventIndex = calendarEvents.findIndex(e => e.id === eventId);
+    if (eventIndex === -1) return;
+    
+    const event = calendarEvents[eventIndex];
+    calendarEvents.splice(eventIndex, 1);
+    
+    saveCalendarEvents();
+    renderCalendar();
+    renderCalendarEventsList(selectedCalendarDate);
+    
+    console.log(`🗑️ 日历事件已删除: ${event.title}`);
+}
+
+// 重置日历事件表单
+function resetCalendarEventForm() {
+    document.getElementById('calendarEventTitle').value = '';
+    document.getElementById('calendarEventDescription').value = '';
+    document.getElementById('calendarEventStartTime').value = '';
+    document.getElementById('calendarEventEndTime').value = '';
+    document.getElementById('calendarEventType').value = 'task';
+    document.getElementById('calendarEventAllDay').checked = false;
+    
+    document.getElementById('addCalendarEventForm').style.display = 'none';
+    document.getElementById('saveCalendarEventBtn').style.display = 'none';
+    document.getElementById('saveCalendarEventBtn').textContent = '保存事件';
+    
+    editingCalendarEvent = null;
+}
+
+// 保存日历事件到本地存储
+function saveCalendarEvents() {
+    localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+    localStorage.setItem('calendarEventIdCounter', calendarEventIdCounter.toString());
+}
+
+// 日历导航功能
+function previousCalendarPeriod() {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    renderCalendar();
+}
+
+function nextCalendarPeriod() {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    renderCalendar();
+}
+
+function goToTodayCalendar() {
+    currentCalendarDate = new Date();
+    renderCalendar();
+}
+
+// 显示添加日历事件
+function showAddCalendarEvent() {
+    if (!selectedCalendarDate) {
+        selectedCalendarDate = new Date();
+    }
+    showCalendarEventModal(selectedCalendarDate);
+}
+
+// 同步日历与任务
+function syncCalendarWithTasks() {
+    console.log('🔄 开始同步日历与任务...');
+    
+    // 获取所有未完成的任务
+    const allTasks = [];
+    todoProjects.forEach(project => {
+        project.tasks.forEach(task => {
+            if (!task.completed) {
+                allTasks.push({
+                    ...task,
+                    projectTitle: project.title || '未命名项目'
+                });
+            }
+        });
+    });
+    
+    if (allTasks.length === 0) {
+        alert('没有需要同步的任务');
+        return;
+    }
+    
+    // 询问用户是否同步
+    const confirmSync = confirm(`找到 ${allTasks.length} 个未完成任务，是否同步到日历？`);
+    if (!confirmSync) return;
+    
+    let syncedCount = 0;
+    
+    allTasks.forEach(task => {
+        // 检查是否已存在相同标题的日历事件
+        const exists = calendarEvents.some(event => 
+            event.title === task.text && 
+            event.date === formatCalendarDateString(new Date())
+        );
+        
+        if (!exists) {
+            const newEvent = {
+                id: calendarEventIdCounter.toString(),
+                title: task.text,
+                description: `来自项目: ${task.projectTitle}`,
+                date: formatCalendarDateString(new Date()),
+                startTime: '09:00',
+                endTime: '10:00',
+                type: 'task',
+                allDay: false,
+                completed: false
+            };
+            
+            calendarEvents.push(newEvent);
+            calendarEventIdCounter++;
+            syncedCount++;
+        }
+    });
+    
+    if (syncedCount > 0) {
+        saveCalendarEvents();
+        renderCalendar();
+        alert(`成功同步 ${syncedCount} 个任务到日历`);
+    } else {
+        alert('所有任务已在日历中，无需同步');
+    }
+    
+    console.log(`✅ 任务同步完成，同步了 ${syncedCount} 个任务`);
 }

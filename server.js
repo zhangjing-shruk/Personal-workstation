@@ -299,6 +299,213 @@ app.delete('/api/tasks/:id', (req, res) => {
     }
 });
 
+// ==================== 日历功能API ====================
+
+const calendarEventsPath = path.join(__dirname, 'calendar-events.json');
+
+// 初始化日历事件数据文件
+if (!fs.existsSync(calendarEventsPath)) {
+    fs.writeFileSync(calendarEventsPath, JSON.stringify([]));
+}
+
+// 读取日历事件数据
+function readCalendarEvents() {
+    try {
+        const data = fs.readFileSync(calendarEventsPath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('读取日历事件数据失败:', error.message);
+        return [];
+    }
+}
+
+// 保存日历事件数据
+function saveCalendarEvents(events) {
+    try {
+        fs.writeFileSync(calendarEventsPath, JSON.stringify(events, null, 2));
+        return true;
+    } catch (error) {
+        console.error('保存日历事件数据失败:', error.message);
+        return false;
+    }
+}
+
+// 获取所有日历事件
+app.get('/api/calendar-events', (req, res) => {
+    try {
+        const events = readCalendarEvents();
+        res.json(events);
+    } catch (error) {
+        console.error('获取日历事件失败:', error);
+        res.status(500).json({ error: '获取日历事件失败' });
+    }
+});
+
+// 获取指定日期的日历事件
+app.get('/api/calendar-events/date/:date', (req, res) => {
+    try {
+        const { date } = req.params;
+        const events = readCalendarEvents();
+        const dayEvents = events.filter(event => event.date === date);
+        res.json(dayEvents);
+    } catch (error) {
+        console.error('获取指定日期日历事件失败:', error);
+        res.status(500).json({ error: '获取指定日期日历事件失败' });
+    }
+});
+
+// 创建新日历事件
+app.post('/api/calendar-events', (req, res) => {
+    try {
+        const { title, description, date, startTime, endTime, type, allDay, completed } = req.body;
+        
+        if (!title || !date) {
+            return res.status(400).json({ error: '事件标题和日期不能为空' });
+        }
+        
+        if (!allDay && (!startTime || !endTime)) {
+            return res.status(400).json({ error: '非全天事件需要开始和结束时间' });
+        }
+        
+        const events = readCalendarEvents();
+        const newEvent = {
+            id: Date.now().toString(),
+            title,
+            description: description || '',
+            date,
+            startTime: startTime || '',
+            endTime: endTime || '',
+            type: type || 'task',
+            allDay: allDay || false,
+            completed: completed || false,
+            createdAt: new Date().toISOString()
+        };
+        
+        events.push(newEvent);
+        
+        if (saveCalendarEvents(events)) {
+            res.status(201).json(newEvent);
+        } else {
+            res.status(500).json({ error: '保存日历事件失败' });
+        }
+    } catch (error) {
+        console.error('创建日历事件失败:', error);
+        res.status(500).json({ error: '创建日历事件失败' });
+    }
+});
+
+// 更新日历事件
+app.put('/api/calendar-events/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, description, date, startTime, endTime, type, allDay, completed } = req.body;
+        
+        const events = readCalendarEvents();
+        const eventIndex = events.findIndex(event => event.id === id);
+        
+        if (eventIndex === -1) {
+            return res.status(404).json({ error: '日历事件不存在' });
+        }
+        
+        // 更新事件信息
+        if (title !== undefined) events[eventIndex].title = title;
+        if (description !== undefined) events[eventIndex].description = description;
+        if (date !== undefined) events[eventIndex].date = date;
+        if (startTime !== undefined) events[eventIndex].startTime = startTime;
+        if (endTime !== undefined) events[eventIndex].endTime = endTime;
+        if (type !== undefined) events[eventIndex].type = type;
+        if (allDay !== undefined) events[eventIndex].allDay = allDay;
+        if (completed !== undefined) events[eventIndex].completed = completed;
+        events[eventIndex].updatedAt = new Date().toISOString();
+        
+        if (saveCalendarEvents(events)) {
+            res.json(events[eventIndex]);
+        } else {
+            res.status(500).json({ error: '更新日历事件失败' });
+        }
+    } catch (error) {
+        console.error('更新日历事件失败:', error);
+        res.status(500).json({ error: '更新日历事件失败' });
+    }
+});
+
+// 删除日历事件
+app.delete('/api/calendar-events/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const events = readCalendarEvents();
+        const eventIndex = events.findIndex(event => event.id === id);
+        
+        if (eventIndex === -1) {
+            return res.status(404).json({ error: '日历事件不存在' });
+        }
+        
+        events.splice(eventIndex, 1);
+        
+        if (saveCalendarEvents(events)) {
+            res.status(204).send();
+        } else {
+            res.status(500).json({ error: '删除日历事件失败' });
+        }
+    } catch (error) {
+        console.error('删除日历事件失败:', error);
+        res.status(500).json({ error: '删除日历事件失败' });
+    }
+});
+
+// 同步任务到日历
+app.post('/api/calendar-events/sync-tasks', (req, res) => {
+    try {
+        const { tasks } = req.body;
+        
+        if (!Array.isArray(tasks)) {
+            return res.status(400).json({ error: '任务数据格式错误' });
+        }
+        
+        const events = readCalendarEvents();
+        let syncedCount = 0;
+        
+        tasks.forEach(task => {
+            // 检查是否已存在相同标题的日历事件
+            const exists = events.some(event => 
+                event.title === task.text && 
+                event.date === task.date
+            );
+            
+            if (!exists) {
+                const newEvent = {
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                    title: task.text,
+                    description: task.description || `来自项目: ${task.projectTitle || '未命名项目'}`,
+                    date: task.date || new Date().toISOString().split('T')[0],
+                    startTime: '09:00',
+                    endTime: '10:00',
+                    type: 'task',
+                    allDay: false,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+                
+                events.push(newEvent);
+                syncedCount++;
+            }
+        });
+        
+        if (saveCalendarEvents(events)) {
+            res.json({ 
+                message: `成功同步 ${syncedCount} 个任务到日历`,
+                syncedCount 
+            });
+        } else {
+            res.status(500).json({ error: '同步任务失败' });
+        }
+    } catch (error) {
+        console.error('同步任务到日历失败:', error);
+        res.status(500).json({ error: '同步任务到日历失败' });
+    }
+});
+
 // 提供主页
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
